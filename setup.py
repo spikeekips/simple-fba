@@ -19,6 +19,7 @@ setup(
     install_requires=(
         'requests',
         'stellar-base',
+        'colorlog',
     ),
     package_dir={'': 'src'},
     packages=find_packages('src', exclude=('test',)),
