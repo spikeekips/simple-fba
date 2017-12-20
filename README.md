@@ -1,132 +1,54 @@
-# Simple FBA(Federated Byzantine Agreement) Implementation
+# Simple FBA Implementation and Simulation
 
-## Premise
+The FBA(Federated Byzantine Agreement) consensus protocol is the way to make agreement between untrusted network nodes. The well-known implementation of FBA in real world is the stellar blockchain network, which has the derived consensus, they called 'SCP'(Stellar Consensus Protocol).
 
-* one ledger(block) has one transaction
-* sibling(s) means the nodes in the same quorum
-* slot has one ballot, and one ballot has one transaction
-* to make story simple and easy, the keypair of stellar will be used
-
-
-## Consensus Process
-
-### Start Node
-
-1. check latest transaction id from storage
-    1. compare between local transaction id and siblings
-    1. if different
-    1. catchup
-1. catched up
-
-
-### New Transaction Received
-
-1. validate transaction
-    1. if it is not valid, response error(`401`)
-1. check the ballot is opened or not
-    1. if opened, wait until the ballot is closed
-        1. the received transaction goes to the transaction pool
-    1. if closed,
-        1. check the siblings ballot is opened or not
-            1. if opened ballot is found,
-                1. check the transaction in ballot is already handled in current node or not
-                    1. if it is already handled, skip it
-                    1. if not,
-                        1. open new ballot with that ballot
-                1. wait until the ballot is closed
-            1. if not found,
-                1. pass
-1. start new ballot with new transaction
-
-
-### New Ballot Is Created
-
-1. broadcast the ballot to siblings
-1. if all nodes accept new ballot
-    1. start consensus process
-1. if not,
-    1. if another nodes has the opened ballot with previous transaction id
-        1. wait until that ballot is closed
-
-
-### Start Agreement, Consensus Process
-
-1. receive the result of validation of other (known) siblings in the same quorum
-1. if the count of accepted is over threshold,
-    1. broadcast closing ballot signal to the siblings
-1. got close signal
-    1. save the transaction in ballot to the storage
-
-
-### When Node Started
-
-1. if node is new,
-    1. create new storage
-    1. create genesis account
-1. start network with given port
-1. if possible, trying to find siblings in the same quorum
+This implementation will help to understand how the agreement is made in FBA and you can simply adjust the quorum size and threshold. Most of the concept and names was derived from SCP and FBA traditions. The more detailed information about FBA and SCP, you can simple find at the https://stellar.org and google. :)
 
 
 ## Installation
 
-* Python 3.6.x or higher
-* nothging :)
-
-### Linux
+At first, install it.
 ```
-$ apt install python3 python3-pip
-$ pip3 install virtualenv
-```
-
-
-### OSX
-```
-$ brew install python3
-$ pip install virtualenv
-```
-
-
-### Source
-
-```
-$ virtualenv ./simple-fba
-Using base prefix '/usr'
-New python executable in /root/simple-fba/bin/python3
-Also creating executable in /root/simple-fba/bin/python
-Installing setuptools, pip, wheel...cdone.
+$ virtualenv simple-fba
 $ cd simple-fba
-$ mkdir src
-$ cd src
-$ git clone https://github.com/spikeekips/simple-fba
-```
+$ source bin/activate
 
-```
+$ git clone git@github.com:spikeekips/simple-fba.git src/simple-fba
+$ cd src/simple-fba
 $ python setup.py develop
 ```
 
+Done!
 
-## Run Nodes
+## Run
 
-For example, we will run 6 nodes with the different port in the same machine.
+Simple usage
 
 ```
-$ simple-fba-node.py -init -name=node0 -port=5000 -siblings=localhost:5001,localhost:5002,localhost:5003,localhost:5004,localhost:5005
-$ simple-fba-node.py -init -name=node1 -port=5001 -siblings=localhost:5000,localhost:5002,localhost:5003,localhost:5004,localhost:5005
-$ simple-fba-node.py -init -name=node2 -port=5002 -siblings=localhost:5001,localhost:5000,localhost:5003,localhost:5004,localhost:5005
-$ simple-fba-node.py -init -name=node3 -port=5003 -siblings=localhost:5001,localhost:5002,localhost:5000,localhost:5004,localhost:5005
-$ simple-fba-node.py -init -name=node4 -port=5004 -siblings=localhost:5001,localhost:5002,localhost:5003,localhost:5000,localhost:5005
-$ simple-fba-node.py -init -name=node5 -port=5005 -siblings=localhost:5001,localhost:5002,localhost:5003,localhost:5004,localhost:5000
+$ simple-fba-simulator.py -h
+usage: simple-fba-simulator.py [-h] [-s] [-nodes NODES] [-trs TRS]
+
+optional arguments:
+  -h, --help    show this help message and exit
+  -s            turn off the debug messages
+  -nodes NODES  number of validator nodes in the same quorum; default 4
+  -trs TRS      threshold; 0 < trs <= 100
 ```
 
-and then, send the 100 payment to the `node0` node. At first, the client or wallet needs it's own secret seed. To generate secret seed, visit https://portal.willet.io .
+Run
 ```
-$ simple-fba-wallet.py node0 SCQ2IRPN4OXFIZNZODN6JQF6O4F2Z3ODA4W27C2GQSVD5WK2KQNA6WKF GAFVNM4NQLCE2RLQLYHIOIZAUEDG4U7RTGRTVNMKFX6KF3QKXTW72ULP 100
+$ simple-fba-simulator.py -s
 ```
 
-`GAFVNM4NQLCE2RLQLYHIOIZAUEDG4U7RTGRTVNMKFX6KF3QKXTW72ULP` is the public address of the other account.
+> You can omit the `-s` option, you will see the more detailed debug messages.
 
 
-## TODO
+The number of nodes(validators) can be set, by default, 4.
+```
+$ simple-fba-simulator.py -s -nodes 10
+```
 
-* Generating keypair
-* Creating account
+And 'threshold' value also can be set
+```
+$ simple-fba-simulator.py -s -nodes 10 -trs 60
+```
